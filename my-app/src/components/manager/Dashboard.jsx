@@ -71,6 +71,7 @@ const Dashboard = () => {
     return <div className="text-red-600 text-center mt-10">{error}</div>;
   }
 
+  
   return (
     <div className="max-w-7xl mx-auto p-8">
       <h1 className="text-3xl font-bold text-indigo-700 mb-8 text-center">
