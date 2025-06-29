@@ -130,7 +130,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Employees Card */}
         <div
-          onClick={() => navigate("/employees")}
+          onClick={() => navigate("/employee")}
           className="flex flex-col items-center justify-center bg-white p-8 rounded-lg shadow hover:bg-gray-50 cursor-pointer transition"
         >
           <UsersIcon className="h-24 w-24 text-indigo-600 mb-4" />
@@ -149,7 +149,7 @@ const Dashboard = () => {
                 {employeeCount}
               </p>
             </>
-          )}
+          )}{" "}
           <p className="text-sm mt-2 text-gray-500">Click to view employees</p>
         </div>
 
