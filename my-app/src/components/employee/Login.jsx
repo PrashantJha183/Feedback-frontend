@@ -25,19 +25,29 @@ const Login = () => {
 
     const savedRole = sessionStorage.getItem("role");
     const savedName = sessionStorage.getItem("name");
-    if (savedRole === "manager") {
+
+    if (savedRole) {
       setUserData({
         role: savedRole,
         name: savedName,
       });
-      navigate("/dashboardformanager");
+
+      if (savedRole === "manager") {
+        navigate("/dashboardformanager");
+      } else if (savedRole === "employee") {
+        navigate("/dashboardforemployee");
+      }
     }
   }, [navigate]);
 
   useEffect(() => {
-    if (userData && userData.role === "manager") {
+    if (userData?.role) {
       const timeout = setTimeout(() => {
-        navigate("/dashboardformanager");
+        if (userData.role === "manager") {
+          navigate("/dashboardformanager");
+        } else if (userData.role === "employee") {
+          navigate("/dashboardforemployee");
+        }
       }, 1000);
       return () => clearTimeout(timeout);
     }
@@ -88,9 +98,13 @@ const Login = () => {
           sessionStorage.setItem("email", data.email);
           sessionStorage.setItem("employee_id", data.employee_id);
           sessionStorage.setItem("loginTime", Date.now().toString());
+
           if (data.role === "manager") {
             navigate("/dashboardformanager");
+          } else if (data.role === "employee") {
+            navigate("/dashboardforemployee");
           }
+
           setUserData(data);
         } else {
           console.error("Login failed:", data);

@@ -41,7 +41,8 @@ export default function Feedback() {
       setSuccess("");
 
       try {
-        const managerId = sessionStorage.getItem("employee_id") || "";
+        const managerId = sessionStorage.getItem("manager_employee_id") || "";
+        console.log("ManagerId: ", managerId);
 
         if (!managerId) {
           throw new Error("Manager not logged in.");

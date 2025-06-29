@@ -1,12 +1,79 @@
-# React + Vite
+# Feedback-frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend of the Feedback Management System built with **React.js** and **Tailwind CSS**. It enables managers and employees to interact with the system through a modern and responsive UI.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Tech Stack
 
-## Expanding the ESLint configuration
+- **React.js**
+- React Router
+- Tailwind CSS
+- HeroIcons
+- Fetch API
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## ✨ Features
+
+✅ **Authentication / Session Handling**
+
+- Store manager or employee ID in session storage for navigation and operations
+
+✅ **Dashboard for Managers**
+
+- Submit feedback for employees
+- View feedback requests from employees
+- Mark requests as seen
+- View feedback given to employees
+- Notifications for:
+  - feedback acknowledged
+  - employee comments
+
+✅ **Dashboard for Employees**
+
+- View feedback from managers
+- Acknowledge feedback
+- Comment on feedback
+- Request feedback from managers
+- View notifications
+- Export feedback history as PDF
+
+✅ **Feedback Form**
+
+- Sentiment selection (positive, neutral, negative)
+- Strengths and improvement text inputs
+- Optional tags
+- Submits feedback to FastAPI backend
+
+✅ **Notifications System**
+
+- View unseen and seen notifications
+- Mark individual or all notifications as seen
+
+✅ **Responsive UI**
+
+- Tailwind CSS ensures layout works well on desktop and mobile
+
+---
+
+## 🔧 Running the Frontend Locally
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/PrashantJha183/Feedback-frontend
+   cd my-app
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Start the development serve:
+
+   ```bash
+   npm run dev
+   ```
