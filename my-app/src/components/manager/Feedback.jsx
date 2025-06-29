@@ -7,7 +7,6 @@ import {
   AdjustmentsHorizontalIcon,
   FaceSmileIcon,
   FaceFrownIcon,
-  //   FaceNeutralIcon,
   TagIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
@@ -19,7 +18,6 @@ export default function Feedback() {
     strengths: "",
     improvement: "",
     sentiment: "positive",
-    anonymous: false,
     tags: "",
   });
 
@@ -27,20 +25,14 @@ export default function Feedback() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  /**
-   * Generic form change handler
-   */
   const handleChange = useCallback((e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   }, []);
 
-  /**
-   * Submits feedback
-   */
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
@@ -49,8 +41,22 @@ export default function Feedback() {
       setSuccess("");
 
       try {
+        const managerId = sessionStorage.getItem("employee_id") || "";
+
+        if (!managerId) {
+          throw new Error("Manager not logged in.");
+        }
+
+        if (!form.employee_id.trim()) {
+          throw new Error("Employee ID is required.");
+        }
+
         const payload = {
-          ...form,
+          employee_id: form.employee_id,
+          manager_employee_id: managerId,
+          strengths: form.strengths,
+          improvement: form.improvement,
+          sentiment: form.sentiment,
           tags: form.tags
             ? form.tags
                 .split(",")
@@ -71,8 +77,9 @@ export default function Feedback() {
         );
 
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.message || "Submission failed");
+          const data = await res.json().catch(() => null);
+          console.log("Backend error:", data);
+          throw new Error(data?.detail || data?.message || "Submission failed");
         }
 
         setSuccess("Feedback submitted successfully!");
@@ -81,12 +88,11 @@ export default function Feedback() {
           strengths: "",
           improvement: "",
           sentiment: "positive",
-          anonymous: false,
           tags: "",
         });
       } catch (err) {
         setError(err.message || "Something went wrong.");
-        console.log("Error in feedback: ", err);
+        console.error("Error in feedback: ", err);
       } finally {
         setLoading(false);
       }
@@ -94,9 +100,6 @@ export default function Feedback() {
     [form]
   );
 
-  /**
-   * Automatically clears success/error after 5s
-   */
   useEffect(() => {
     let timeout;
     if (success || error) {
@@ -114,19 +117,9 @@ export default function Feedback() {
         Submit Feedback
       </h1>
 
-      {success && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 p-3 rounded mb-4">
-          <CheckCircleIcon className="h-5 w-5" />
-          <span>{success}</span>
-        </div>
-      )}
+      {success && <AlertBox type="success" message={success} />}
 
-      {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 p-3 rounded mb-4">
-          <ExclamationCircleIcon className="h-5 w-5" />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <AlertBox type="error" message={error} />}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Employee ID */}
@@ -161,57 +154,15 @@ export default function Feedback() {
         />
 
         {/* Sentiment */}
-        <div>
-          <label className="block text-gray-700 text-sm font-medium mb-1">
-            Sentiment
-          </label>
-          <div className="flex space-x-3">
-            {[
-              {
-                value: "positive",
-                icon: FaceSmileIcon,
-                color: "text-green-600",
-              },
-              {
-                value: "neutral",
-                icon: FaceSmileIcon,
-                color: "text-gray-500",
-              },
-              { value: "negative", icon: FaceFrownIcon, color: "text-red-600" },
-            ].map((option) => (
-              <button
-                type="button"
-                key={option.value}
-                onClick={() =>
-                  setForm((prev) => ({
-                    ...prev,
-                    sentiment: option.value,
-                  }))
-                }
-                className={`flex items-center px-3 py-2 rounded-md border ${
-                  form.sentiment === option.value
-                    ? "border-indigo-600 bg-indigo-50"
-                    : "border-gray-300"
-                }`}
-              >
-                <option.icon className={`h-5 w-5 mr-2 ${option.color}`} />
-                <span className="capitalize">{option.value}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Anonymous */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="anonymous"
-            checked={form.anonymous}
-            onChange={handleChange}
-            className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-          />
-          <span className="text-gray-700 text-sm">Submit anonymously</span>
-        </div>
+        <SentimentSelector
+          sentiment={form.sentiment}
+          onChange={(sentiment) =>
+            setForm((prev) => ({
+              ...prev,
+              sentiment,
+            }))
+          }
+        />
 
         {/* Tags */}
         <InputField
@@ -239,9 +190,6 @@ export default function Feedback() {
   );
 }
 
-/**
- * Single-line input field with icon
- */
 function InputField({
   label,
   name,
@@ -272,9 +220,6 @@ function InputField({
   );
 }
 
-/**
- * Multi-line textarea field with icon
- */
 function TextAreaField({
   label,
   name,
@@ -299,6 +244,77 @@ function TextAreaField({
           className="pl-10 block w-full border border-gray-300 rounded-md py-2 focus:ring-indigo-500 focus:border-indigo-500"
         ></textarea>
       </div>
+    </div>
+  );
+}
+
+function SentimentSelector({ sentiment, onChange }) {
+  const options = [
+    {
+      value: "positive",
+      icon: FaceSmileIcon,
+      color: "text-green-600",
+    },
+    {
+      value: "neutral",
+      icon: FaceSmileIcon,
+      color: "text-gray-500",
+    },
+    {
+      value: "negative",
+      icon: FaceFrownIcon,
+      color: "text-red-600",
+    },
+  ];
+
+  return (
+    <div>
+      <label className="block text-gray-700 text-sm font-medium mb-1">
+        Sentiment
+      </label>
+      <div className="flex space-x-3">
+        {options.map((option) => (
+          <button
+            type="button"
+            key={option.value}
+            onClick={() => onChange(option.value)}
+            className={`flex items-center px-3 py-2 rounded-md border ${
+              sentiment === option.value
+                ? "border-indigo-600 bg-indigo-50"
+                : "border-gray-300"
+            }`}
+          >
+            <option.icon className={`h-5 w-5 mr-2 ${option.color}`} />
+            <span className="capitalize">{option.value}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AlertBox({ type, message }) {
+  const styles =
+    type === "success"
+      ? {
+          bg: "bg-green-50",
+          border: "border-green-200",
+          text: "text-green-700",
+          Icon: CheckCircleIcon,
+        }
+      : {
+          bg: "bg-red-50",
+          border: "border-red-200",
+          text: "text-red-700",
+          Icon: ExclamationCircleIcon,
+        };
+
+  return (
+    <div
+      className={`flex items-center gap-2 ${styles.bg} border ${styles.border} ${styles.text} p-3 rounded mb-4`}
+    >
+      <styles.Icon className="h-5 w-5" />
+      <span>{message}</span>
     </div>
   );
 }

@@ -9,14 +9,26 @@ import {
   ChatBubbleLeftRightIcon,
   HomeIcon,
   ArrowRightOnRectangleIcon,
+  ClockIcon,
+  InboxIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate, Link } from "react-router-dom";
 
 const navigation = [
   { name: "Dashboard", icon: HomeIcon, to: "/dashboardformanager" },
-  { name: "Employees", icon: UsersIcon, to: "/dashboardformanager" },
+  { name: "Employees", icon: UsersIcon, to: "/employee" },
   { name: "Feedback", icon: ChatBubbleLeftRightIcon, to: "/feedback" },
+  {
+    name: "Feedback History",
+    icon: ClockIcon,
+    to: "/feedback-history",
+  },
+  {
+    name: "Requested Feedback",
+    icon: InboxIcon,
+    to: "/requested-feedback",
+  },
   { name: "Register", icon: UserCircleIcon, to: "/register" },
 ];
 
@@ -26,7 +38,7 @@ export default function Header({ managerName, children }) {
 
   const handleLogout = () => {
     sessionStorage.clear();
-    navigate("/login");
+    navigate("/");
   };
 
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,7 +12,14 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState(null);
 
-  // Check if user is already logged in
+  // Reset password modal state
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetEmployeeId, setResetEmployeeId] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState(null);
+  const [resetSuccess, setResetSuccess] = useState(null);
+
   useEffect(() => {
     localStorage.clear();
 
@@ -29,11 +36,9 @@ const Login = () => {
 
   useEffect(() => {
     if (userData && userData.role === "manager") {
-      // Delay navigation briefly to show welcome message
       const timeout = setTimeout(() => {
         navigate("/dashboardformanager");
       }, 1000);
-
       return () => clearTimeout(timeout);
     }
   }, [userData, navigate]);
@@ -106,8 +111,57 @@ const Login = () => {
         controller.abort();
       };
     },
-    [employeeId, password]
+    [employeeId, password, navigate]
   );
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError(null);
+    setResetSuccess(null);
+
+    try {
+      const response = await fetch(
+        "https://feedback-2uwd.onrender.com/users/reset-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            employee_id: resetEmployeeId,
+            new_password: newPassword,
+          }),
+        }
+      );
+
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (jsonErr) {
+        console.error("Invalid JSON response:", text);
+        setResetError("Server error. Please try again.");
+        setResetLoading(false);
+        return;
+      }
+
+      if (response.ok) {
+        console.log("Password reset successful:", data);
+        setResetSuccess("Password reset successfully. You can now log in.");
+        setResetEmployeeId("");
+        setNewPassword("");
+      } else {
+        console.error("Password reset failed:", data);
+        setResetError(data.message || "Something went wrong.");
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setResetError("Network error. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   return (
     <>
@@ -122,12 +176,6 @@ const Login = () => {
             Sign in to your account
           </h2>
         </div>
-
-        {/* {userData && userData.name && (
-          <div className="mt-6 text-center text-green-600 text-lg font-semibold">
-            Welcome, {userData.name}!
-          </div>
-        )} */}
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -161,6 +209,13 @@ const Login = () => {
                 >
                   Password
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setResetModalOpen(true)}
+                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                >
+                  Forgot password?
+                </button>
               </div>
               <div className="mt-2 relative">
                 <input
@@ -210,6 +265,80 @@ const Login = () => {
           )}
         </div>
       </div>
+
+      {/* Reset Password Modal */}
+      {resetModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
+            <button
+              onClick={() => {
+                setResetModalOpen(false);
+                setResetError(null);
+                setResetSuccess(null);
+              }}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">
+              Reset Password
+            </h3>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="resetEmployeeId"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Employee ID
+                </label>
+                <input
+                  id="resetEmployeeId"
+                  type="text"
+                  required
+                  value={resetEmployeeId}
+                  onChange={(e) => setResetEmployeeId(e.target.value)}
+                  disabled={resetLoading}
+                  className="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 focus:outline-indigo-600 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="newPassword"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  New Password
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={resetLoading}
+                  className="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 focus:outline-indigo-600 sm:text-sm"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className={`w-full rounded-md ${
+                  resetLoading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-indigo-600 hover:bg-indigo-500"
+                } px-3 py-2 text-sm font-semibold text-white shadow-sm`}
+              >
+                {resetLoading ? "Resetting..." : "Reset Password"}
+              </button>
+              {resetError && (
+                <p className="text-sm text-red-500 mt-2">{resetError}</p>
+              )}
+              {resetSuccess && (
+                <p className="text-sm text-green-600 mt-2">{resetSuccess}</p>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };
