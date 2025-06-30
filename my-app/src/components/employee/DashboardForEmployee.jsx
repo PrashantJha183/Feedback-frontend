@@ -25,27 +25,36 @@ const DashboardForEmployee = () => {
   const [timeline, setTimeline] = useState([]);
 
   const navigate = useNavigate();
-  const employeeId = sessionStorage.getItem("employee_id") || "";
-  const employeeName = sessionStorage.getItem("name") || "Employee";
+
+  const employeeId =
+    JSON.parse(localStorage.getItem("loggedInUser"))?.employee_id ||
+    sessionStorage.getItem("employee_id") ||
+    "";
+
+  const employeeName =
+    JSON.parse(localStorage.getItem("loggedInUser"))?.name ||
+    sessionStorage.getItem("name") ||
+    "Employee";
 
   useEffect(() => {
-    if (!employeeId) return;
+    if (!employeeId) {
+      setError("No employee logged in.");
+      setLoading(false);
+      return;
+    }
 
-    const fetchData = async () => {
+    const fetchTimeline = async () => {
       try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch(
+        const res = await fetch(
           `https://feedback-2uwd.onrender.com/users/dashboard/employee/${employeeId}`
         );
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => null);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
           throw new Error(errData?.detail || "Failed to fetch dashboard data.");
         }
 
-        const data = await response.json();
+        const data = await res.json();
         setTimeline(data);
       } catch (err) {
         setError(
@@ -56,10 +65,10 @@ const DashboardForEmployee = () => {
       }
     };
 
-    fetchData();
+    fetchTimeline();
   }, [employeeId]);
 
-  // Group feedbacks by manager_name
+  // group feedback by manager
   const groupedByManager = timeline.reduce((acc, fb) => {
     if (!acc[fb.manager_name]) {
       acc[fb.manager_name] = [];
@@ -67,6 +76,8 @@ const DashboardForEmployee = () => {
     acc[fb.manager_name].push(fb);
     return acc;
   }, {});
+
+  const managers = Object.keys(groupedByManager);
 
   return (
     <div className="max-w-5xl mx-auto p-6 sm:p-8">
@@ -78,11 +89,6 @@ const DashboardForEmployee = () => {
         <p className="text-center text-gray-500">Loading dashboard...</p>
       ) : error ? (
         <p className="text-center text-red-500">{error}</p>
-      ) : timeline.length === 0 ? (
-        <div className="flex flex-col items-center text-gray-600 mt-12">
-          <ClipboardDocumentListIcon className="h-20 w-20 mb-4 text-gray-400" />
-          <p className="text-lg">No feedback available yet.</p>
-        </div>
       ) : (
         <div className="space-y-8">
           {/* Employee Info Card */}
@@ -108,11 +114,11 @@ const DashboardForEmployee = () => {
                   <p className="text-gray-500 text-xs font-semibold">
                     Managers
                   </p>
-                  {Object.keys(groupedByManager).length === 0 ? (
-                    <p className="text-gray-400 text-sm">No managers yet</p>
+                  {managers.length === 0 ? (
+                    <p className="text-gray-400 text-sm">No managers found</p>
                   ) : (
                     <ul className="space-y-1">
-                      {Object.keys(groupedByManager).map((manager) => (
+                      {managers.map((manager) => (
                         <li
                           key={manager}
                           className="text-gray-700 text-sm font-medium hover:text-indigo-700 cursor-pointer"
@@ -138,93 +144,102 @@ const DashboardForEmployee = () => {
             </div>
           </div>
 
-          {/* Feedback grouped by Manager */}
-          {Object.entries(groupedByManager).map(([managerName, feedbacks]) => (
-            <div
-              key={managerName}
-              id={`manager-${managerName}`}
-              className="bg-white rounded-lg shadow p-6 hover:bg-gray-50 transition"
-            >
-              {/* Manager Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <UserCircleIcon className="h-8 w-8 text-indigo-600" />
-                  <span className="text-lg font-bold text-gray-700">
-                    Feedback from {managerName}
-                  </span>
+          {/* No feedback available */}
+          {timeline.length === 0 ? (
+            <div className="flex flex-col items-center text-gray-600 mt-12">
+              <ClipboardDocumentListIcon className="h-20 w-20 mb-4 text-gray-400" />
+              <p className="text-lg">No feedback available yet.</p>
+            </div>
+          ) : (
+            Object.entries(groupedByManager).map(([managerName, feedbacks]) => (
+              <div
+                key={managerName}
+                id={`manager-${managerName}`}
+                className="bg-white rounded-lg shadow p-6 hover:bg-gray-50 transition"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <UserCircleIcon className="h-8 w-8 text-indigo-600" />
+                    <span className="text-lg font-bold text-gray-700">
+                      Feedback from {managerName}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                {feedbacks
-                  .slice(0, 3) // ✅ Show only top 3 feedbacks
-                  .map((fb) => (
-                    <div
-                      key={fb.feedback_id}
-                      onClick={() => navigate("/employeefeedback")}
-                      className="border border-gray-200 rounded-md p-4 hover:bg-indigo-50 transition cursor-pointer"
-                    >
-                      {/* Sentiment */}
-                      <div className="flex items-center gap-3 mb-3">
-                        {sentimentIcon[fb.sentiment] || (
-                          <FaceSmileIcon className="h-6 w-6 text-gray-400" />
-                        )}
-                        <span className="capitalize text-gray-700 font-medium">
-                          Sentiment: {fb.sentiment || "N/A"}
-                        </span>
-                      </div>
-
-                      {/* Feedback Details */}
-                      <div className="mb-2">
-                        <p className="text-xs text-gray-500 font-semibold">
-                          Strengths:
-                        </p>
-                        <p className="text-gray-700 text-sm">
-                          {fb.strengths || "N/A"}
-                        </p>
-                      </div>
-
-                      <div className="mb-2">
-                        <p className="text-xs text-gray-500 font-semibold">
-                          Areas of Improvement:
-                        </p>
-                        <p className="text-gray-700 text-sm">
-                          {fb.improvement || "N/A"}
-                        </p>
-                      </div>
-
-                      {/* Acknowledged & Timestamp */}
-                      <div className="flex justify-between items-center mt-3">
-                        <div className="flex items-center gap-2">
-                          {fb.acknowledged ? (
-                            <>
-                              <CheckCircleIcon className="h-5 w-5 text-green-600" />
-                              <span className="text-green-700 text-xs">
-                                Acknowledged
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-yellow-600 text-xs">
-                              Not Acknowledged
-                            </span>
+                <div className="space-y-4">
+                  {feedbacks
+                    .slice(0, 3) // limit to top 3
+                    .map((fb) => (
+                      <div
+                        key={fb.feedback_id}
+                        onClick={() => navigate("/employeefeedback")}
+                        className="border border-gray-200 rounded-md p-4 hover:bg-indigo-50 transition cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          {sentimentIcon[fb.sentiment] || (
+                            <FaceSmileIcon className="h-6 w-6 text-gray-400" />
                           )}
-                        </div>
-                        <div className="flex items-center text-gray-500 text-xs gap-1">
-                          <ClockIcon className="h-4 w-4" />
-                          <span>
-                            {new Date(fb.created_at).toLocaleDateString()}{" "}
-                            {new Date(fb.created_at).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                          <span className="capitalize text-gray-700 font-medium">
+                            Sentiment: {fb.sentiment || "N/A"}
                           </span>
                         </div>
+
+                        <div className="mb-2">
+                          <p className="text-xs text-gray-500 font-semibold">
+                            Strengths:
+                          </p>
+                          <p className="text-gray-700 text-sm">
+                            {fb.strengths || "N/A"}
+                          </p>
+                        </div>
+
+                        <div className="mb-2">
+                          <p className="text-xs text-gray-500 font-semibold">
+                            Areas of Improvement:
+                          </p>
+                          <p className="text-gray-700 text-sm">
+                            {fb.improvement || "N/A"}
+                          </p>
+                        </div>
+
+                        <div className="flex justify-between items-center mt-3">
+                          <div className="flex items-center gap-2">
+                            {fb.acknowledged ? (
+                              <>
+                                <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                                <span className="text-green-700 text-xs">
+                                  Acknowledged
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-yellow-600 text-xs">
+                                Not Acknowledged
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center text-gray-500 text-xs gap-1">
+                            <ClockIcon className="h-4 w-4" />
+                            <span>
+                              {fb.created_at
+                                ? new Date(fb.created_at).toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      timeZone: "Asia/Kolkata",
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric",
+                                    }
+                                  )
+                                : "-"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
     </div>

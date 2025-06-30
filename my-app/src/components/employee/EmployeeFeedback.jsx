@@ -7,7 +7,7 @@ import {
   ChatBubbleBottomCenterIcon,
   FaceSmileIcon,
   FaceFrownIcon,
-  //   FaceNeutralIcon,
+  // FaceNeutralIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
 
@@ -18,7 +18,10 @@ const sentimentIcons = {
 };
 
 export default function EmployeeFeedback() {
-  const employeeId = sessionStorage.getItem("employee_id") || "";
+  // Fetch employee from localStorage instead
+  const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser")) || {};
+  const employeeId = loggedInUser.employee_id || "";
+
   const [feedbacks, setFeedbacks] = useState([]);
   const [filteredFeedbacks, setFilteredFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +123,6 @@ export default function EmployeeFeedback() {
         throw new Error(errData?.detail || "Comment failed.");
       }
 
-      // Save comment locally
       setCommentsMap((prev) => ({
         ...prev,
         [id]: comment,
@@ -141,6 +143,7 @@ export default function EmployeeFeedback() {
           <input
             type="text"
             value={search}
+            autoComplete="off"
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search feedback..."
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 shadow-sm placeholder-gray-400 text-sm"
@@ -193,7 +196,6 @@ function FeedbackCard({
 
   return (
     <div className="bg-white p-6 rounded-xl shadow hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col justify-between border border-gray-100">
-      {/* Header */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <span className="text-gray-800 font-semibold text-base">
@@ -201,11 +203,17 @@ function FeedbackCard({
           </span>
           <div className="flex items-center text-gray-500 text-xs gap-1">
             <ClockIcon className="h-4 w-4" />
-            <span>{feedback.created_at}</span>
+            <span>
+              {new Date(feedback.created_at).toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                timeZone: "Asia/Kolkata",
+              })}
+            </span>
           </div>
         </div>
 
-        {/* Sentiment */}
         <div className="flex items-center gap-3 mb-4">
           {sentimentIcons[feedback.sentiment] || (
             <FaceNeutralIcon className="h-6 w-6 text-gray-400" />
@@ -215,7 +223,6 @@ function FeedbackCard({
           </span>
         </div>
 
-        {/* Strengths */}
         <div className="mb-3">
           <p className="text-xs font-medium text-gray-500">Strengths</p>
           <p className="text-sm text-gray-700 line-clamp-3">
@@ -223,7 +230,6 @@ function FeedbackCard({
           </p>
         </div>
 
-        {/* Improvement */}
         <div className="mb-3">
           <p className="text-xs font-medium text-gray-500">
             Areas of Improvement
@@ -233,7 +239,6 @@ function FeedbackCard({
           </p>
         </div>
 
-        {/* Tags */}
         {feedback.tags?.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {feedback.tags.map((tag, idx) => (
@@ -247,7 +252,6 @@ function FeedbackCard({
           </div>
         )}
 
-        {/* Comment Display */}
         <div className="mt-4 border-t border-gray-200 pt-3">
           <p className="text-xs font-medium text-gray-500 mb-1">Your Comment</p>
           <p className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -256,7 +260,6 @@ function FeedbackCard({
         </div>
       </div>
 
-      {/* Actions */}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {!feedback.acknowledged ? (
           <button
@@ -282,7 +285,6 @@ function FeedbackCard({
         </button>
       </div>
 
-      {/* Comment Modal */}
       {commentOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity">
           <div className="bg-white rounded-lg p-6 w-80 max-w-full shadow-xl transform scale-100 transition-transform duration-300">

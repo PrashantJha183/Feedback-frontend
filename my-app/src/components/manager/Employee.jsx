@@ -5,6 +5,10 @@ import {
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
+  UserCircleIcon,
+  EnvelopeIcon,
+  KeyIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +24,6 @@ export default function Employee() {
   const [error, setError] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [debounceTimer, setDebounceTimer] = useState(null);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -35,24 +38,25 @@ export default function Employee() {
     manager_employee_id: "",
   });
 
+  // Check auth
   useEffect(() => {
-    const userId = sessionStorage.getItem("employee_id");
-    const userRole = sessionStorage.getItem("role");
-
-    if (!userId || !userRole) {
+    const userData = localStorage.getItem("loggedInUser");
+    if (!userData) {
       navigate("/");
       return;
     }
 
-    if (userRole !== "manager") {
+    const user = JSON.parse(userData);
+    if (user.role !== "manager") {
       alert("Unauthorized: Only managers can view this page.");
       navigate("/");
       return;
     }
 
-    setManagerId(userId);
+    setManagerId(user.employee_id);
   }, [navigate]);
 
+  // Fetch employees
   useEffect(() => {
     if (managerId) {
       fetchEmployees(managerId);
@@ -72,7 +76,7 @@ export default function Employee() {
       setError(null);
     } catch (e) {
       console.error(e);
-      setError(e.message);
+      setError(e.message || "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -93,12 +97,22 @@ export default function Employee() {
 
   const handleUpdate = async () => {
     try {
+      const payload = {
+        ...editData,
+        manager_employee_id: managerId,
+      };
+
+      if (!payload.password) {
+        // Remove password if left blank
+        delete payload.password;
+      }
+
       const res = await fetch(`${BASE_URL}/users/${editData.employee_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(editData),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error("Update failed");
@@ -134,41 +148,34 @@ export default function Employee() {
     const value = e.target.value;
     setSearchQuery(value);
 
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
+    if (value.trim() === "") {
+      setFilteredEmployees(employees);
+    } else {
+      const lowerValue = value.toLowerCase();
+      setFilteredEmployees(
+        employees.filter(
+          (emp) =>
+            emp.name.toLowerCase().includes(lowerValue) ||
+            emp.email.toLowerCase().includes(lowerValue) ||
+            emp.role.toLowerCase().includes(lowerValue) ||
+            emp.employee_id.toLowerCase().includes(lowerValue)
+        )
+      );
     }
-
-    const timer = setTimeout(() => {
-      if (value.trim() === "") {
-        setFilteredEmployees(employees);
-      } else {
-        const lowerValue = value.toLowerCase();
-        setFilteredEmployees(
-          employees.filter(
-            (emp) =>
-              emp.name.toLowerCase().includes(lowerValue) ||
-              emp.email.toLowerCase().includes(lowerValue) ||
-              emp.role.toLowerCase().includes(lowerValue) ||
-              emp.employee_id.toLowerCase().includes(lowerValue)
-          )
-        );
-      }
-    }, 300);
-
-    setDebounceTimer(timer);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-3xl font-bold text-gray-800">
           Employee Management
         </h2>
         <div className="flex items-center gap-2 w-full sm:w-80">
           <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
           <input
+            autoComplete="off"
             type="text"
-            placeholder="Search..."
+            placeholder="Search employees..."
             value={searchQuery}
             onChange={handleSearchChange}
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -177,69 +184,48 @@ export default function Employee() {
       </div>
 
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-center text-gray-600">Loading employees...</p>
       ) : error ? (
-        <p className="text-red-600">{error}</p>
+        <p className="text-center text-red-600">{error}</p>
       ) : filteredEmployees.length === 0 ? (
-        <p className="text-gray-500">No employees found.</p>
+        <p className="text-center text-gray-500">No employees found.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-center text-sm bg-white shadow rounded-lg">
+        <div className="overflow-x-auto rounded-lg shadow">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
               <tr>
-                <th className="border border-indigo-600 px-4 py-3 font-semibold tracking-wide">
-                  Name
-                </th>
-                <th className="border border-indigo-600 px-4 py-3 font-semibold tracking-wide">
-                  Email
-                </th>
-                <th className="border border-indigo-600 px-4 py-3 font-semibold tracking-wide">
-                  Role
-                </th>
-                <th className="border border-indigo-600 px-4 py-3 font-semibold tracking-wide">
+                <th className="px-4 py-3 text-left font-semibold">Name</th>
+                <th className="px-4 py-3 text-left font-semibold">Email</th>
+                <th className="px-4 py-3 text-left font-semibold">Role</th>
+                <th className="px-4 py-3 text-left font-semibold">
                   Employee ID
                 </th>
-                <th className="border border-indigo-600 px-4 py-3 font-semibold tracking-wide">
-                  Actions
-                </th>
+                <th className="px-4 py-3 text-center font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredEmployees.map((emp, idx) => (
-                <tr
-                  key={emp.employee_id}
-                  className={`${
-                    idx % 2 === 0 ? "bg-gray-50" : "bg-white"
-                  } hover:bg-indigo-50`}
-                >
-                  <td className="border border-gray-300 px-4 py-2 font-medium text-gray-800">
-                    {emp.name}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 font-medium text-gray-800">
-                    {emp.email}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 font-medium text-gray-800">
-                    {emp.role}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 font-medium text-gray-800">
-                    {emp.employee_id}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    <div className="flex justify-center gap-2">
+            <tbody className="divide-y divide-gray-200">
+              {filteredEmployees.map((emp) => (
+                <tr key={emp.employee_id} className="hover:bg-indigo-50">
+                  <td className="px-4 py-2 text-gray-800">{emp.name}</td>
+                  <td className="px-4 py-2 text-gray-800">{emp.email}</td>
+                  <td className="px-4 py-2 text-gray-800">{emp.role}</td>
+                  <td className="px-4 py-2 text-gray-800">{emp.employee_id}</td>
+                  <td className="px-4 py-2 text-center">
+                    <div className="flex justify-center gap-3">
                       <button
                         onClick={() => handleEditClick(emp)}
-                        className="text-indigo-600 hover:text-indigo-900"
+                        className="text-indigo-600 hover:text-indigo-800"
                       >
-                        <PencilIcon className="h-5 w-5" />
+                        <PencilIcon className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => {
                           setSelectedEmployee(emp);
                           setDeleteModalOpen(true);
                         }}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-800"
                       >
-                        <TrashIcon className="h-5 w-5" />
+                        <TrashIcon className="w-5 h-5" />
                       </button>
                     </div>
                   </td>
@@ -262,96 +248,88 @@ export default function Employee() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+            <div className="fixed inset-0 bg-black bg-opacity-30 transition-opacity" />
           </Transition.Child>
 
-          <div className="fixed inset-0 z-10 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <Dialog.Panel className="max-w-lg w-full bg-white p-6 rounded shadow">
-                <Dialog.Title className="text-lg font-medium text-gray-900">
-                  Edit Employee
-                </Dialog.Title>
-                <div className="mt-4 space-y-3">
-                  <div>
-                    <label className="block text-sm text-gray-700">Name</label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                      value={editData.name}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          name: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-700">Email</label>
-                    <input
-                      type="email"
-                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                      value={editData.email}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          email: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-700">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                      value={editData.password}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          password: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-700">Role</label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                      value={editData.role}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          role: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="w-full max-w-md bg-white rounded-lg p-6">
+              <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
+                Edit Employee
+              </Dialog.Title>
+              <div className="space-y-4">
+                <div className="relative">
+                  <UserCircleIcon className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+                  <input
+                    autoComplete="off"
+                    type="text"
+                    placeholder="Name"
+                    className="pl-10 w-full border border-gray-300 rounded py-2 text-sm"
+                    value={editData.name}
+                    onChange={(e) =>
+                      setEditData({ ...editData, name: e.target.value })
+                    }
+                  />
                 </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    onClick={() => setEditModalOpen(false)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 text-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleUpdate}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm"
-                  >
-                    Update
-                  </button>
+                <div className="relative">
+                  <EnvelopeIcon className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+                  <input
+                    autoComplete="off"
+                    type="email"
+                    placeholder="Email"
+                    className="pl-10 w-full border border-gray-300 rounded py-2 text-sm"
+                    value={editData.email}
+                    onChange={(e) =>
+                      setEditData({ ...editData, email: e.target.value })
+                    }
+                  />
                 </div>
-              </Dialog.Panel>
-            </div>
+                <div className="relative">
+                  <KeyIcon className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+                  <input
+                    autoComplete="off"
+                    type="password"
+                    placeholder="Password (leave blank to keep existing)"
+                    className="pl-10 w-full border border-gray-300 rounded py-2 text-sm"
+                    value={editData.password}
+                    onChange={(e) =>
+                      setEditData({ ...editData, password: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="relative">
+                  <UserGroupIcon className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    placeholder="Role"
+                    className="pl-10 w-full border border-gray-300 rounded py-2 text-sm"
+                    value={editData.role}
+                    onChange={(e) =>
+                      setEditData({ ...editData, role: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setEditModalOpen(false)}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdate}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700"
+                >
+                  Update
+                </button>
+              </div>
+            </Dialog.Panel>
           </div>
         </Dialog>
       </Transition.Root>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       <Transition.Root show={deleteModalOpen} as={Fragment}>
         <Dialog as="div" className="relative z-10" onClose={setDeleteModalOpen}>
           <Transition.Child
@@ -363,34 +341,34 @@ export default function Employee() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+            <div className="fixed inset-0 bg-black bg-opacity-30 transition-opacity" />
           </Transition.Child>
 
-          <div className="fixed inset-0 z-10 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <Dialog.Panel className="max-w-md w-full bg-white p-6 rounded shadow">
-                <Dialog.Title className="text-lg font-medium text-gray-900">
-                  Confirm Delete
-                </Dialog.Title>
-                <p className="mt-2 text-sm text-gray-600">
-                  Are you sure you want to delete this employee?
-                </p>
-                <div className="mt-4 flex justify-end space-x-3">
-                  <button
-                    onClick={() => setDeleteModalOpen(false)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 text-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </Dialog.Panel>
-            </div>
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="w-full max-w-md bg-white rounded-lg p-6">
+              <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
+                Confirm Delete
+              </Dialog.Title>
+              <p className="text-gray-600 text-sm mb-4">
+                Are you sure you want to delete employee{" "}
+                <span className="font-semibold">{selectedEmployee?.name}</span>{" "}
+                ?
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </Dialog.Panel>
           </div>
         </Dialog>
       </Transition.Root>

@@ -13,11 +13,13 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function Feedback() {
+  const [managerId, setManagerId] = useState("");
   const [form, setForm] = useState({
     employee_id: "",
     strengths: "",
     improvement: "",
     sentiment: "positive",
+    anonymous: false,
     tags: "",
   });
 
@@ -25,11 +27,20 @@ export default function Feedback() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
+  // Load manager info from localStorage like your dashboard
+  useEffect(() => {
+    const userData = localStorage.getItem("loggedInUser");
+    if (userData) {
+      const user = JSON.parse(userData);
+      setManagerId(user.employee_id || "");
+    }
+  }, []);
+
   const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   }, []);
 
@@ -41,9 +52,6 @@ export default function Feedback() {
       setSuccess("");
 
       try {
-        const managerId = sessionStorage.getItem("manager_employee_id") || "";
-        console.log("ManagerId: ", managerId);
-
         if (!managerId) {
           throw new Error("Manager not logged in.");
         }
@@ -53,11 +61,12 @@ export default function Feedback() {
         }
 
         const payload = {
-          employee_id: form.employee_id,
           manager_employee_id: managerId,
+          employee_id: form.employee_id,
           strengths: form.strengths,
           improvement: form.improvement,
           sentiment: form.sentiment,
+          anonymous: form.anonymous,
           tags: form.tags
             ? form.tags
                 .split(",")
@@ -89,6 +98,7 @@ export default function Feedback() {
           strengths: "",
           improvement: "",
           sentiment: "positive",
+          anonymous: false,
           tags: "",
         });
       } catch (err) {
@@ -98,7 +108,7 @@ export default function Feedback() {
         setLoading(false);
       }
     },
-    [form]
+    [form, managerId]
   );
 
   useEffect(() => {
@@ -165,6 +175,14 @@ export default function Feedback() {
           }
         />
 
+        {/* Anonymous checkbox */}
+        <CheckboxField
+          label="Submit anonymously"
+          name="anonymous"
+          checked={form.anonymous}
+          onChange={handleChange}
+        />
+
         {/* Tags */}
         <InputField
           label="Tags (comma-separated)"
@@ -208,6 +226,7 @@ function InputField({
       <div className="relative">
         <Icon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
         <input
+          autoComplete="off"
           type="text"
           name={name}
           value={value}
@@ -245,6 +264,22 @@ function TextAreaField({
           className="pl-10 block w-full border border-gray-300 rounded-md py-2 focus:ring-indigo-500 focus:border-indigo-500"
         ></textarea>
       </div>
+    </div>
+  );
+}
+
+function CheckboxField({ label, name, checked, onChange }) {
+  return (
+    <div className="flex items-center space-x-2">
+      <input
+        autoComplete="off"
+        type="checkbox"
+        name={name}
+        checked={checked}
+        onChange={onChange}
+        className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+      />
+      <label className="text-gray-700 text-sm">{label}</label>
     </div>
   );
 }

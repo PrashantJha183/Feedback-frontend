@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { UsersIcon, BellIcon, ChartPieIcon } from "@heroicons/react/24/outline";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [managerName, setManagerName] = useState("");
+  const [managerId, setManagerId] = useState("");
 
   const [unseenCount, setUnseenCount] = useState(0);
   const [unseenLoading, setUnseenLoading] = useState(true);
@@ -27,12 +28,17 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
 
-  const managerId = sessionStorage.getItem("employee_id") || "";
+  useEffect(() => {
+    const userData = localStorage.getItem("loggedInUser");
+    if (userData) {
+      const user = JSON.parse(userData);
+      setManagerName(user.name || "");
+      setManagerId(user.employee_id || "");
+      console.log("Logged-in manager ID:", user.employee_id);
+    }
+  }, []);
 
   useEffect(() => {
-    const name = sessionStorage.getItem("name") || "";
-    setManagerName(name);
-
     if (!managerId) return;
 
     const fetchAll = async () => {
@@ -70,17 +76,14 @@ const Dashboard = () => {
           throw new Error(errData?.detail || "Failed to fetch dashboard data.");
         }
 
-        // unseen count
         const unseenData = await unseenRes.json();
         setUnseenCount(unseenData.unseen_count || 0);
         setUnseenError(null);
 
-        // employee list
         const employeeData = await employeeRes.json();
         setEmployeeCount(employeeData.length || 0);
         setEmployeeError(null);
 
-        // dashboard report
         const dashData = await dashboardRes.json();
 
         let totalFeedbacks = 0;
@@ -142,6 +145,8 @@ const Dashboard = () => {
             <p className="text-gray-400 mt-4">Loading employees...</p>
           ) : employeeError ? (
             <p className="text-red-500 mt-4">{employeeError}</p>
+          ) : employeeCount === 0 ? (
+            <p className="text-gray-500 mt-4">No employees found.</p>
           ) : (
             <>
               <p className="text-gray-600 mt-4">Employees under you:</p>
@@ -149,7 +154,7 @@ const Dashboard = () => {
                 {employeeCount}
               </p>
             </>
-          )}{" "}
+          )}
           <p className="text-sm mt-2 text-gray-500">Click to view employees</p>
         </div>
 
@@ -183,18 +188,20 @@ const Dashboard = () => {
             <p className="text-gray-400 mt-2">Loading...</p>
           ) : dashboardError ? (
             <p className="text-red-500 mt-2">{dashboardError}</p>
+          ) : dashboardData.totalEmployees === 0 ? (
+            <p className="text-gray-500 mt-2">
+              No feedback data found for employees yet.
+            </p>
           ) : (
             <>
               <p className="text-gray-600 mt-2">Employees in report:</p>
               <p className="text-3xl font-bold text-green-600 mt-1">
                 {dashboardData.totalEmployees}
               </p>
-
               <p className="text-gray-600 mt-3">Total Feedbacks:</p>
               <p className="text-3xl font-bold text-green-600 mt-1">
                 {dashboardData.totalFeedbacks}
               </p>
-
               <div className="flex gap-4 mt-4">
                 <span className="text-sm text-green-600">
                   Positive: {dashboardData.positive}

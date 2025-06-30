@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import {
   Bars3Icon,
   XMarkIcon,
@@ -32,11 +32,22 @@ const navigation = [
   { name: "Register", icon: UserCircleIcon, to: "/register" },
 ];
 
-export default function Header({ managerName, children }) {
+export default function Header({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [managerName, setManagerName] = useState("");
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Load manager name from localStorage if available
+    const userData = localStorage.getItem("loggedInUser");
+    if (userData) {
+      const user = JSON.parse(userData);
+      setManagerName(user.name || "");
+    }
+  }, []);
+
   const handleLogout = () => {
+    localStorage.clear();
     sessionStorage.clear();
     navigate("/");
   };
@@ -158,7 +169,7 @@ export default function Header({ managerName, children }) {
             <div className="flex items-center space-x-2">
               <UserCircleIcon className="h-6 w-6 text-gray-700" />
               <span className="text-sm font-medium text-gray-700">
-                {managerName}
+                {managerName || "Manager"}
               </span>
             </div>
           </div>

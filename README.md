@@ -1,59 +1,57 @@
-# Feedback-frontend
+# 🚀 Employee Feedback Frontend
 
-This is the frontend of the Feedback Management System built with **React.js** and **Tailwind CSS**. It enables managers and employees to interact with the system through a modern and responsive UI.
-
----
-
-## 🚀 Tech Stack
-
-- **React.js**
-- React Router
-- Tailwind CSS
-- HeroIcons
-- Fetch API
+> **A modern React.js frontend for an Employee Feedback Management System. Empowering employees and managers with seamless feedback handling, notifications, and robust security.**
 
 ---
 
 ## ✨ Features
 
-✅ **Authentication / Session Handling**
+✅ **Dashboard**
 
-- Store manager or employee ID in session storage for navigation and operations
+- View personal profile and quick stats
 
-✅ **Dashboard for Managers**
+✅ **Feedback Requests**
 
-- Submit feedback for employees
-- View feedback requests from employees
-- Mark requests as seen
-- View feedback given to employees
-- Notifications for:
-  - feedback acknowledged
-  - employee comments
+- Employees can submit feedback requests to managers
 
-✅ **Dashboard for Employees**
+✅ **Feedback History**
 
-- View feedback from managers
-- Acknowledge feedback
-- Comment on feedback
-- Request feedback from managers
-- View notifications
-- Export feedback history as PDF
+- Browse historical feedback and responses
 
-✅ **Feedback Form**
+✅ **Change Password**
 
-- Sentiment selection (positive, neutral, negative)
-- Strengths and improvement text inputs
-- Optional tags
-- Submits feedback to FastAPI backend
+- Secure password management with validation
 
 ✅ **Notifications System**
 
-- View unseen and seen notifications
-- Mark individual or all notifications as seen
+- Real-time notifications for new feedback and updates
+- Mark notifications as seen individually or all at once
 
-✅ **Responsive UI**
+✅ **Responsive Design**
 
-- Tailwind CSS ensures layout works well on desktop and mobile
+- Optimized for desktops, tablets, and mobile devices
+
+✅ **Modern UI**
+
+- Built with Tailwind CSS and Headless UI for smooth transitions and modern look
+
+✅ **Authentication & Local Storage**
+
+- Session handling and role-based rendering
+
+---
+
+## 🛠️ Tech Stack
+
+| Technology           | Purpose                                  |
+| -------------------- | ---------------------------------------- |
+| **React.js**         | Frontend development                     |
+| **Vite**             | Fast build and dev server                |
+| **Tailwind CSS**     | Styling and layout                       |
+| **Heroicons**        | Clean and modern icons                   |
+| **Headless UI**      | Accessible and interactive UI components |
+| **React Router DOM** | Navigation and routing                   |
+| **Fetch API**        | HTTP requests to backend services        |
 
 ---
 
@@ -77,3 +75,21 @@ This is the frontend of the Feedback Management System built with **React.js** a
    ```bash
    npm run dev
    ```
+
+## 🔧 Testing
+
+Here are test credentials to try the app:
+
+✅ Manager Login
+employee_id: MGR-001
+
+password: secret123
+
+✅ Employee Login
+employee_id: EMP-123
+
+password: secret123
+
+✅ You can access the deployed app here:
+
+🌐 Live Demo – [VoxPop](https://voxpop.netlify.app/)

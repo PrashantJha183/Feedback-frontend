@@ -1,8 +1,10 @@
 import { Outlet } from "react-router-dom";
-import Header from "../employee/Header";
+import Header from "../components/employee/Header";
 
 const EmployeeLayout = () => {
-  const employeeName = sessionStorage.getItem("name") || "";
+  const storedUser = JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+  const employeeName = storedUser.name || "Employee";
+
   return (
     <Header employeeName={employeeName}>
       <Outlet />

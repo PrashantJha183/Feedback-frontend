@@ -1,95 +1,148 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
+  MagnifyingGlassIcon,
   EyeIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-import { Link } from "react-router-dom";
+import { Dialog, Transition } from "@headlessui/react";
+import { useNavigate, Link } from "react-router-dom";
 
-const FeedbackRequests = () => {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+const BASE_URL = "https://feedback-2uwd.onrender.com";
+
+export default function FeedbackHistory() {
+  const navigate = useNavigate();
+  const [managerId, setManagerId] = useState(null);
+
+  const [feedbackRequests, setFeedbackRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const managerId = sessionStorage.getItem("employee_id") || "";
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredRequests, setFilteredRequests] = useState([]);
+  const [debounceTimer, setDebounceTimer] = useState(null);
 
-  const fetchRequests = async () => {
-    if (!managerId) return;
+  useEffect(() => {
+    const userData = localStorage.getItem("loggedInUser");
+    if (!userData) {
+      navigate("/");
+      return;
+    }
+    const user = JSON.parse(userData);
+    if (!user.employee_id || user.role !== "manager") {
+      navigate("/");
+      return;
+    }
+    setManagerId(user.employee_id);
+  }, [navigate]);
 
+  useEffect(() => {
+    if (managerId) {
+      fetchFeedbackRequests(managerId);
+    }
+  }, [managerId]);
+
+  const fetchFeedbackRequests = async (managerId) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/requests/${managerId}`
-      );
+      const res = await fetch(`${BASE_URL}/feedback/requests/${managerId}`);
       if (!res.ok) throw new Error("Failed to fetch feedback requests.");
-
       const data = await res.json();
-      setRequests(data);
+      setFeedbackRequests(data);
+      setFilteredRequests(data);
       setError(null);
-    } catch (err) {
-      setError(err.message || "Unknown error occurred.");
-      setRequests([]);
+    } catch (e) {
+      console.error(e);
+      setError(e.message);
+      setFeedbackRequests([]);
+      setFilteredRequests([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const markAsSeen = async (requestId) => {
+  const markRequestSeen = async (requestId) => {
     try {
       const res = await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/requests/${requestId}/seen`,
+        `${BASE_URL}/feedback/requests/${requestId}/seen`,
         { method: "PATCH" }
       );
       if (!res.ok) throw new Error("Failed to mark request as seen.");
 
-      // ✅ Update local state instead of refetching everything
-      setRequests((prev) =>
-        prev.map((req) => (req.id === requestId ? { ...req, seen: true } : req))
+      setFeedbackRequests((prev) =>
+        prev.map((r) => (r.id === requestId ? { ...r, seen: true } : r))
       );
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "Error updating request.");
+      setFilteredRequests((prev) =>
+        prev.map((r) => (r.id === requestId ? { ...r, seen: true } : r))
+      );
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "Error updating request.");
     }
   };
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    if (debounceTimer) clearTimeout(debounceTimer);
+
+    const timer = setTimeout(() => {
+      if (value.trim() === "") {
+        setFilteredRequests(feedbackRequests);
+      } else {
+        const lower = value.toLowerCase();
+        setFilteredRequests(
+          feedbackRequests.filter(
+            (req) =>
+              req.employee_id?.toLowerCase().includes(lower) ||
+              req.message?.toLowerCase().includes(lower)
+          )
+        );
+      }
+    }, 300);
+
+    setDebounceTimer(timer);
+  };
 
   return (
-    <div className="max-w-5xl mx-auto p-8">
-      <h1 className="text-3xl font-bold text-indigo-700 mb-8 text-center">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <h2 className="text-3xl font-bold text-center text-indigo-700 mb-8">
         Feedback Requests
-      </h1>
+      </h2>
 
-      {loading && (
-        <div className="flex justify-center text-gray-500">Loading...</div>
-      )}
-
-      {error && <div className="text-red-600 text-center">{error}</div>}
-
-      {!loading && requests.length === 0 && (
-        <div className="flex flex-col items-center text-gray-400">
-          <ExclamationTriangleIcon className="h-12 w-12 mb-4" />
-          <p>No feedback requests found.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+        <div className="flex items-center w-full sm:w-96 relative">
+          <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 text-gray-400" />
+          <input
+            autoComplete="off"
+            type="text"
+            placeholder="Search requests..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="pl-10 w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
         </div>
-      )}
+      </div>
 
-      {!loading && requests.length > 0 && (
+      {loading ? (
+        <p className="text-center text-gray-500">Loading...</p>
+      ) : error ? (
+        <p className="text-center text-red-600">{error}</p>
+      ) : filteredRequests.length > 0 ? (
         <ul className="space-y-4">
-          {requests.map((req) => (
+          {filteredRequests.map((req) => (
             <li
               key={req.id}
-              className="bg-white rounded-lg shadow p-4 flex justify-between items-center"
+              className="bg-white p-4 rounded shadow flex justify-between items-center"
             >
               <div>
                 <p className="text-gray-700 font-medium">
                   From Employee: {req.employee_id}
                 </p>
                 <p className="text-gray-500 text-sm mt-1">
-                  Message: {req.message}
+                  Message: {req.message || "-"}
                 </p>
                 {req.seen ? (
                   <p className="mt-2 flex items-center text-green-600 text-sm">
@@ -103,8 +156,8 @@ const FeedbackRequests = () => {
               <div className="flex items-center space-x-3">
                 {!req.seen && (
                   <button
-                    onClick={() => markAsSeen(req.id)}
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 flex items-center"
+                    onClick={() => markRequestSeen(req.id)}
+                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 flex items-center text-sm"
                   >
                     <CheckCircleIcon className="h-5 w-5 mr-1" />
                     Mark Seen
@@ -120,9 +173,9 @@ const FeedbackRequests = () => {
             </li>
           ))}
         </ul>
+      ) : (
+        <p className="text-center text-gray-500">No feedback requests found.</p>
       )}
     </div>
   );
-};
-
-export default FeedbackRequests;
+}

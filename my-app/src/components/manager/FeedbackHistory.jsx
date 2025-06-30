@@ -25,7 +25,7 @@ export default function FeedbackHistory() {
     employee_id: "",
     strengths: "",
     improvement: "",
-    sentiment: "",
+    sentiment: "positive",
     anonymous: false,
     tags: [],
   });
@@ -34,21 +34,17 @@ export default function FeedbackHistory() {
   const [debounceTimer, setDebounceTimer] = useState(null);
 
   useEffect(() => {
-    const userId = sessionStorage.getItem("employee_id");
-    const userRole = sessionStorage.getItem("role");
-
-    if (!userId || !userRole) {
+    const userData = localStorage.getItem("loggedInUser");
+    if (!userData) {
       navigate("/");
       return;
     }
-
-    if (userRole !== "manager") {
-      alert("Unauthorized: Only managers can view this page.");
+    const user = JSON.parse(userData);
+    if (!user.employee_id || user.role !== "manager") {
       navigate("/");
       return;
     }
-
-    setManagerId(userId);
+    setManagerId(user.employee_id);
   }, [navigate]);
 
   useEffect(() => {
@@ -104,10 +100,10 @@ export default function FeedbackHistory() {
   const handleEditClick = (fb) => {
     setSelectedFeedback(fb);
     setEditData({
-      employee_id: fb.employee_id,
-      strengths: fb.strengths,
-      improvement: fb.improvement,
-      sentiment: fb.sentiment,
+      employee_id: fb.employee_id || "",
+      strengths: fb.strengths || "",
+      improvement: fb.improvement || "",
+      sentiment: fb.sentiment || "positive",
       anonymous: fb.anonymous || false,
       tags: fb.tags || [],
     });
@@ -181,6 +177,7 @@ export default function FeedbackHistory() {
         <div className="flex items-center w-full sm:w-96 relative">
           <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 text-gray-400" />
           <input
+            autoComplete="off"
             type="text"
             placeholder="Search feedback..."
             value={searchQuery}
@@ -233,12 +230,12 @@ export default function FeedbackHistory() {
                       : "bg-indigo-50 hover:bg-indigo-100"
                   }
                 >
-                  <td className="px-4 py-2">{fb.manager_id}</td>
-                  <td className="px-4 py-2">{fb.manager_name}</td>
-                  <td className="px-4 py-2">{fb.employee_id}</td>
-                  <td className="px-4 py-2">{fb.strengths}</td>
-                  <td className="px-4 py-2">{fb.improvement}</td>
-                  <td className="px-4 py-2">{fb.sentiment}</td>
+                  <td className="px-4 py-2">{fb.manager_employee_id || "-"}</td>
+                  <td className="px-4 py-2">{fb.manager_name || "-"}</td>
+                  <td className="px-4 py-2">{fb.employee_id || "-"}</td>
+                  <td className="px-4 py-2">{fb.strengths || "-"}</td>
+                  <td className="px-4 py-2">{fb.improvement || "-"}</td>
+                  <td className="px-4 py-2">{fb.sentiment || "-"}</td>
                   <td className="px-4 py-2">{fb.anonymous ? "Yes" : "No"}</td>
                   <td className="px-4 py-2">
                     {fb.tags?.length > 0 ? fb.tags.join(", ") : "-"}
@@ -248,7 +245,12 @@ export default function FeedbackHistory() {
                   </td>
                   <td className="px-4 py-2">
                     {fb.created_at
-                      ? new Date(fb.created_at).toLocaleDateString()
+                      ? new Date(fb.created_at).toLocaleDateString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })
                       : "-"}
                   </td>
                   <td className="px-4 py-2 break-words">
@@ -294,7 +296,6 @@ export default function FeedbackHistory() {
           >
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
           </Transition.Child>
-
           <div className="fixed inset-0 z-10 overflow-y-auto">
             <div className="flex min-h-full items-center justify-center p-4">
               <Dialog.Panel className="max-w-lg w-full bg-white p-6 rounded shadow">
@@ -307,6 +308,7 @@ export default function FeedbackHistory() {
                       Strengths
                     </label>
                     <input
+                      autoComplete="off"
                       type="text"
                       className="mt-1 block w-full border border-gray-300 rounded px-2 py-1 text-sm"
                       value={editData.strengths}
@@ -320,6 +322,7 @@ export default function FeedbackHistory() {
                       Improvement
                     </label>
                     <input
+                      autoComplete="off"
                       type="text"
                       className="mt-1 block w-full border border-gray-300 rounded px-2 py-1 text-sm"
                       value={editData.improvement}
@@ -336,6 +339,7 @@ export default function FeedbackHistory() {
                       Sentiment
                     </label>
                     <input
+                      autoComplete="off"
                       type="text"
                       className="mt-1 block w-full border border-gray-300 rounded px-2 py-1 text-sm"
                       value={editData.sentiment}
@@ -349,6 +353,7 @@ export default function FeedbackHistory() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
+                      autoComplete="off"
                       type="checkbox"
                       checked={editData.anonymous}
                       onChange={(e) =>
@@ -365,6 +370,7 @@ export default function FeedbackHistory() {
                       Tags (comma-separated)
                     </label>
                     <input
+                      autoComplete="off"
                       type="text"
                       className="mt-1 block w-full border border-gray-300 rounded px-2 py-1 text-sm"
                       value={editData.tags.join(", ")}
@@ -400,7 +406,7 @@ export default function FeedbackHistory() {
         </Dialog>
       </Transition.Root>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       <Transition.Root show={deleteModalOpen} as={Fragment}>
         <Dialog as="div" className="relative z-10" onClose={setDeleteModalOpen}>
           <Transition.Child
@@ -414,7 +420,6 @@ export default function FeedbackHistory() {
           >
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
           </Transition.Child>
-
           <div className="fixed inset-0 z-10 overflow-y-auto">
             <div className="flex min-h-full items-center justify-center p-4">
               <Dialog.Panel className="max-w-md w-full bg-white p-6 rounded shadow">

@@ -29,27 +29,20 @@ const navigation = [
     icon: ClipboardDocumentListIcon,
     to: "/employeefeedback",
   },
-  {
-    name: "Change Password",
-    icon: LockClosedIcon,
-    to: "/changepassword",
-  },
-  {
-    name: "Notifications",
-    icon: BellIcon,
-    to: "/notification",
-  },
+  { name: "Change Password", icon: LockClosedIcon, to: "/changepassword" },
+  { name: "Notifications", icon: BellIcon, to: "/notification" },
 ];
 
 export default function Header({ employeeName, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate();
-
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
   const [notifActionLoading, setNotifActionLoading] = useState(false);
 
-  const employeeId = sessionStorage.getItem("employee_id") || "";
+  const navigate = useNavigate();
+
+  const storedUser = JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+  const employeeId = storedUser.employee_id || "";
 
   const fetchNotifications = async () => {
     if (!employeeId) return;
@@ -72,15 +65,14 @@ export default function Header({ employeeName, children }) {
     fetchNotifications();
   }, [employeeId]);
 
+  // FIXED toggleSeen to use query params
   const toggleSeen = async (notifId, seen) => {
     setNotifActionLoading(true);
     try {
       await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/notifications/${notifId}`,
+        `https://feedback-2uwd.onrender.com/feedback/notifications/${notifId}?seen=${seen}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(seen),
         }
       );
       await fetchNotifications();
@@ -112,7 +104,7 @@ export default function Header({ employeeName, children }) {
   const unseenCount = unseenNotifications.length;
 
   const handleLogout = () => {
-    sessionStorage.clear();
+    localStorage.clear();
     navigate("/");
   };
 
@@ -162,6 +154,9 @@ export default function Header({ employeeName, children }) {
                     <XMarkIcon className="h-6 w-6" />
                   </button>
                 </div>
+                <div className="px-4 py-2 border-t border-gray-200 text-gray-700 font-medium">
+                  Welcome, {employeeName}
+                </div>
                 <nav className="mt-5 space-y-1 px-2">
                   {navigation.map((item) => (
                     <Link
@@ -197,6 +192,7 @@ export default function Header({ employeeName, children }) {
             alt="Logo"
           />
         </div>
+
         <nav className="flex flex-1 flex-col px-4 py-4 space-y-2 overflow-y-auto">
           {navigation.map((item) => (
             <Link
@@ -285,7 +281,17 @@ export default function Header({ employeeName, children }) {
                               </p>
                             )}
                             <p className="text-xs text-gray-400 mt-1">
-                              {new Date(n.created_at).toLocaleString()}
+                              {n.created_at
+                                ? new Date(n.created_at).toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      timeZone: "Asia/Kolkata",
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    }
+                                  )
+                                : "-"}
                             </p>
                           </div>
                           <button

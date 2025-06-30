@@ -20,6 +20,7 @@ export default function Register() {
     password: "",
     role: "manager",
     employee_id: "",
+    manager_employee_id: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -27,23 +28,34 @@ export default function Register() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [managerId, setManagerId] = useState("");
+  useEffect(() => {
+    if (form.role === "employee") {
+      const userData = localStorage.getItem("loggedInUser");
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.role === "manager") {
+          setForm((prev) => ({
+            ...prev,
+            manager_employee_id: user.employee_id || "",
+          }));
+        }
+      }
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        manager_employee_id: "",
+      }));
+    }
+  }, [form.role]);
 
   useEffect(() => {
-    const storedManagerId = sessionStorage.getItem("employee_id") || "";
-    setManagerId(storedManagerId);
-  }, []);
-
-  // Automatically clear success/error after 5 seconds
-  useEffect(() => {
-    let timer;
     if (success || error) {
-      timer = setTimeout(() => {
+      const timer = setTimeout(() => {
         setSuccess("");
         setError("");
       }, 5000);
+      return () => clearTimeout(timer);
     }
-    return () => clearTimeout(timer);
   }, [success, error]);
 
   const handleChange = (e) => {
@@ -63,19 +75,11 @@ export default function Register() {
     try {
       const payload = {
         ...form,
+        manager_employee_id:
+          form.role === "employee" ? form.manager_employee_id : null,
       };
 
-      if (form.role === "employee") {
-        if (!managerId) {
-          throw new Error("Manager ID not found. Cannot register employee.");
-        }
-        payload.manager_employee_id = managerId;
-      } else {
-        // Remove manager_employee_id if present
-        delete payload.manager_employee_id;
-      }
-
-      const res = await fetch("https://feedback-2uwd.onrender.com/users/", {
+      const res = await fetch("http://localhost:8000/users/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,9 +89,7 @@ export default function Register() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
-        throw new Error(
-          errData?.detail || errData?.message || "Registration failed."
-        );
+        throw new Error(errData?.detail || "Registration failed.");
       }
 
       setSuccess("User registered successfully!");
@@ -97,6 +99,7 @@ export default function Register() {
         password: "",
         role: "manager",
         employee_id: "",
+        manager_employee_id: "",
       });
     } catch (err) {
       setError(err.message || "Something went wrong.");
@@ -108,7 +111,7 @@ export default function Register() {
   return (
     <div className="max-w-lg mx-auto mt-10 p-8 bg-white rounded-lg shadow">
       <h1 className="text-3xl font-bold text-center text-indigo-700 mb-6">
-        Register New User
+        Register User
       </h1>
 
       {success && (
@@ -126,7 +129,6 @@ export default function Register() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Employee ID */}
         <div>
           <label className="block text-gray-700 text-sm font-medium mb-1">
             Employee ID
@@ -146,7 +148,6 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Name */}
         <div>
           <label className="block text-gray-700 text-sm font-medium mb-1">
             Name
@@ -166,7 +167,6 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Email */}
         <div>
           <label className="block text-gray-700 text-sm font-medium mb-1">
             Email
@@ -186,7 +186,6 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Password */}
         <div>
           <label className="block text-gray-700 text-sm font-medium mb-1">
             Password
@@ -205,8 +204,8 @@ export default function Register() {
             />
             <button
               type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
             >
               {showPassword ? (
                 <EyeSlashIcon className="h-5 w-5" />
@@ -217,7 +216,6 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Role */}
         <div>
           <label className="block text-gray-700 text-sm font-medium mb-1">
             Role
@@ -236,6 +234,27 @@ export default function Register() {
             </select>
           </div>
         </div>
+
+        {form.role === "employee" && (
+          <div>
+            <label className="block text-gray-700 text-sm font-medium mb-1">
+              Manager Employee ID
+            </label>
+            <div className="relative">
+              <IdentificationIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
+              <input
+                autoComplete="off"
+                type="text"
+                name="manager_employee_id"
+                value={form.manager_employee_id}
+                onChange={handleChange}
+                placeholder="Enter Manager's Employee ID"
+                required
+                className="pl-10 block w-full border border-gray-300 rounded-md py-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+          </div>
+        )}
 
         <button
           type="submit"

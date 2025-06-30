@@ -13,7 +13,7 @@ import FeedbackHistory from "./components/manager/FeedbackHistory";
 import FeedbackRequests from "./components/manager/FeedbackRequests";
 import Employee from "./components/manager/Employee";
 import DashboardForEmployee from "./components/employee/DashboardForEmployee";
-import EmployeeLayout from "./components/employeeView/EmployeeLayout";
+import EmployeeLayout from "./employeeView/EmployeeLayout";
 import EmployeeFeedback from "./components/employee/EmployeeFeedback";
 import FeedbackRequestForm from "./components/employee/FeedbackRequestForm";
 import ChangePassword from "./components/employee/ChangePassword";

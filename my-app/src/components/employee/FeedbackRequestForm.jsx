@@ -16,7 +16,9 @@ export default function FeedbackRequestForm() {
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
 
-  const employeeId = sessionStorage.getItem("employee_id") || "";
+  // Get from localStorage instead of sessionStorage
+  const storedUser = JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+  const employeeId = storedUser.employee_id || "";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -79,6 +81,7 @@ export default function FeedbackRequestForm() {
           <input
             type="text"
             id="managerId"
+            autoComplete="off"
             value={managerId}
             onChange={(e) => setManagerId(e.target.value)}
             placeholder="Enter manager's employee ID"

@@ -1,371 +1,326 @@
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+"use client";
 
-const Login = () => {
-  const navigate = useNavigate();
+import { useState, useEffect, Fragment } from "react";
+import {
+  IdentificationIcon,
+  KeyIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  EyeIcon,
+  EyeSlashIcon,
+} from "@heroicons/react/24/outline";
+import { Dialog, Transition } from "@headlessui/react";
 
-  const [employeeId, setEmployeeId] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
+export default function Login() {
+  const [form, setForm] = useState({
+    employee_id: "",
+    password: "",
+  });
+
   const [loading, setLoading] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
 
-  // Reset password modal state
+  const [showPassword, setShowPassword] = useState(false);
+
   const [resetModalOpen, setResetModalOpen] = useState(false);
-  const [resetEmployeeId, setResetEmployeeId] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [resetForm, setResetForm] = useState({
+    employee_id: "",
+    new_password: "",
+  });
   const [resetLoading, setResetLoading] = useState(false);
-  const [resetError, setResetError] = useState(null);
-  const [resetSuccess, setResetSuccess] = useState(null);
+  const [resetSuccess, setResetSuccess] = useState("");
+  const [resetError, setResetError] = useState("");
 
   useEffect(() => {
-    localStorage.clear();
-
-    const savedRole = sessionStorage.getItem("role");
-    const savedName = sessionStorage.getItem("name");
-
-    if (savedRole === "manager") {
-      setUserData({
-        role: savedRole,
-        name: savedName,
-      });
-      navigate("/dashboardformanager");
-    } else if (savedRole === "employee") {
-      setUserData({
-        role: savedRole,
-        name: savedName,
-      });
-      navigate("/dashboardforemployee");
+    if (success || error) {
+      const timer = setTimeout(() => {
+        setSuccess("");
+        setError("");
+      }, 5000);
+      return () => clearTimeout(timer);
     }
-  }, [navigate]);
+  }, [success, error]);
 
-  useEffect(() => {
-    if (userData) {
-      const timeout = setTimeout(() => {
-        if (userData.role === "manager") {
-          navigate("/dashboardformanager");
-        } else if (userData.role === "employee") {
-          navigate("/dashboardforemployee");
-        }
-      }, 1000);
-      return () => clearTimeout(timeout);
-    }
-  }, [userData, navigate]);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-  const handleSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
-      setLoading(true);
-      setError(null);
-
-      const controller = new AbortController();
-      const signal = controller.signal;
-
-      try {
-        const response = await fetch(
-          "https://feedback-2uwd.onrender.com/users/login",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              employee_id: employeeId,
-              password: password,
-            }),
-            signal,
-          }
-        );
-
-        const text = await response.text();
-
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (jsonErr) {
-          console.error("Invalid JSON response:", text);
-          setError("Server error. Please try again.");
-          setLoading(false);
-          return;
-        }
-
-        if (response.ok) {
-          console.log("Login Success:", data);
-
-          // Save user info
-          sessionStorage.setItem("role", data.role);
-          sessionStorage.setItem("name", data.name);
-          sessionStorage.setItem("email", data.email);
-          sessionStorage.setItem("employee_id", data.employee_id);
-          sessionStorage.setItem("loginTime", Date.now().toString());
-
-          if (data.manager_employee_id) {
-            sessionStorage.setItem(
-              "manager_employee_id",
-              data.manager_employee_id
-            );
-          }
-          console.log("Manager: ", data.manager_employee_id);
-
-          // Redirect based on role
-          if (data.role === "manager") {
-            navigate("/dashboardformanager");
-          } else if (data.role === "employee") {
-            navigate("/dashboardforemployee");
-          }
-
-          setUserData(data);
-        } else {
-          console.error("Login failed:", data);
-          setError(data.message || "Something went wrong. Please try again.");
-        }
-      } catch (err) {
-        console.error("Fetch error:", err);
-        if (err.name === "AbortError") {
-          console.log("Request was aborted.");
-        } else {
-          setError("Network error. Please try again.");
-        }
-      } finally {
-        setLoading(false);
-      }
-
-      return () => {
-        controller.abort();
-      };
-    },
-    [employeeId, password, navigate]
-  );
-
-  const handleResetPassword = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setResetLoading(true);
-    setResetError(null);
-    setResetSuccess(null);
+    setLoading(true);
+    setSuccess("");
+    setError("");
 
     try {
-      const response = await fetch(
-        "https://feedback-2uwd.onrender.com/users/reset-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            employee_id: resetEmployeeId,
-            new_password: newPassword,
-          }),
-        }
-      );
+      const res = await fetch("http://localhost:8000/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-      const text = await response.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (jsonErr) {
-        console.error("Invalid JSON response:", text);
-        setResetError("Server error. Please try again.");
-        setResetLoading(false);
-        return;
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.detail || "Login failed.");
       }
 
-      if (response.ok) {
-        console.log("Password reset successful:", data);
-        setResetSuccess("Password reset successfully. You can now log in.");
-        setResetEmployeeId("");
-        setNewPassword("");
+      const data = await res.json();
+
+      localStorage.setItem("loggedInUser", JSON.stringify(data));
+
+      setSuccess(`Welcome, ${data.name}! Redirecting...`);
+
+      if (data.role === "manager") {
+        const empRes = await fetch(
+          `http://localhost:8000/users/manager/${data.employee_id}/employees`
+        );
+
+        if (empRes.ok) {
+          const employees = await empRes.json();
+          localStorage.setItem("managerEmployees", JSON.stringify(employees));
+        }
+
+        window.location.href = "/dashboardformanager";
       } else {
-        console.error("Password reset failed:", data);
-        setResetError(data.message || "Something went wrong.");
+        window.location.href = "/dashboardforemployee";
       }
     } catch (err) {
-      console.error("Fetch error:", err);
-      setResetError("Network error. Please try again.");
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetChange = (e) => {
+    const { name, value } = e.target;
+    setResetForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetSuccess("");
+    setResetError("");
+
+    try {
+      const res = await fetch("http://localhost:8000/users/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(resetForm),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.detail || "Password reset failed.");
+      }
+
+      setResetSuccess("Password has been reset successfully.");
+      setResetForm({
+        employee_id: "",
+        new_password: "",
+      });
+    } catch (err) {
+      setResetError(err.message || "Something went wrong.");
     } finally {
       setResetLoading(false);
     }
   };
 
   return (
-    <>
-      <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <img
-            alt="Your Company"
-            src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
-            className="mx-auto h-10 w-auto"
-          />
-          <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-            Sign in to your account
-          </h2>
-        </div>
+    <div className="max-w-md mx-auto mt-10 p-8 bg-white rounded-lg shadow">
+      <h1 className="text-3xl font-bold text-center text-indigo-700 mb-6">
+        User Login
+      </h1>
 
-        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="employeeId"
-                className="block text-sm font-medium text-gray-900"
-              >
-                Employee ID
-              </label>
-              <div className="mt-2">
-                <input
-                  id="employeeId"
-                  name="employeeId"
-                  type="text"
-                  required
-                  value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
-                  disabled={loading}
-                  autoComplete="off"
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-900"
-                >
-                  Password
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setResetModalOpen(true)}
-                  className="text-sm text-indigo-600 hover:text-indigo-500"
-                >
-                  Forgot password?
-                </button>
-              </div>
-              <div className="mt-2 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  autoComplete="off"
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
-                  tabIndex={-1}
-                  disabled={loading}
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" aria-hidden="true" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" aria-hidden="true" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`flex w-full justify-center rounded-md ${
-                  loading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-500"
-                } px-3 py-1.5 text-sm font-semibold text-white shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
-              >
-                {loading ? "Signing in..." : "Sign in"}
-              </button>
-            </div>
-          </form>
-
-          {error && (
-            <p className="mt-5 text-center text-sm text-red-500">{error}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Reset Password Modal */}
-      {resetModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
-            <button
-              onClick={() => {
-                setResetModalOpen(false);
-                setResetError(null);
-                setResetSuccess(null);
-              }}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-            <h3 className="text-lg font-semibold mb-4 text-gray-900">
-              Reset Password
-            </h3>
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="resetEmployeeId"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Employee ID
-                </label>
-                <input
-                  id="resetEmployeeId"
-                  type="text"
-                  required
-                  value={resetEmployeeId}
-                  onChange={(e) => setResetEmployeeId(e.target.value)}
-                  disabled={resetLoading}
-                  className="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 focus:outline-indigo-600 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="newPassword"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  New Password
-                </label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  required
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={resetLoading}
-                  className="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 focus:outline-indigo-600 sm:text-sm"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={resetLoading}
-                className={`w-full rounded-md ${
-                  resetLoading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-500"
-                } px-3 py-2 text-sm font-semibold text-white shadow-sm`}
-              >
-                {resetLoading ? "Resetting..." : "Reset Password"}
-              </button>
-              {resetError && (
-                <p className="text-sm text-red-500 mt-2">{resetError}</p>
-              )}
-              {resetSuccess && (
-                <p className="text-sm text-green-600 mt-2">{resetSuccess}</p>
-              )}
-            </form>
-          </div>
+      {success && (
+        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 p-3 rounded mb-4">
+          <CheckCircleIcon className="h-5 w-5" />
+          <span>{success}</span>
         </div>
       )}
-    </>
-  );
-};
 
-export default Login;
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 p-3 rounded mb-4">
+          <ExclamationCircleIcon className="h-5 w-5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="block text-gray-700 text-sm font-medium mb-1">
+            Employee ID
+          </label>
+          <div className="relative">
+            <IdentificationIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
+            <input
+              type="text"
+              name="employee_id"
+              value={form.employee_id}
+              onChange={handleChange}
+              required
+              placeholder="Enter Employee ID"
+              autoComplete="off"
+              className="pl-10 block w-full border border-gray-300 rounded-md py-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-gray-700 text-sm font-medium mb-1">
+            Password
+          </label>
+          <div className="relative">
+            <KeyIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              placeholder="Enter Password"
+              autoComplete="off"
+              className="pl-10 pr-10 block w-full border border-gray-300 rounded-md py-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full py-2 px-4 rounded-md text-white font-semibold ${
+            loading
+              ? "bg-indigo-300 cursor-not-allowed"
+              : "bg-indigo-600 hover:bg-indigo-700"
+          }`}
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={() => setResetModalOpen(true)}
+            className="text-indigo-600 hover:underline text-sm mt-2"
+          >
+            Forgot Password?
+          </button>
+        </div>
+      </form>
+
+      {/* Forgot Password Modal */}
+      <Transition.Root show={resetModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={setResetModalOpen}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 z-10 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <Dialog.Panel className="max-w-md w-full bg-white p-6 rounded shadow">
+                <Dialog.Title className="text-lg font-medium text-gray-900">
+                  Reset Password
+                </Dialog.Title>
+
+                {resetSuccess && (
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 p-3 rounded mt-4">
+                    <CheckCircleIcon className="h-5 w-5" />
+                    <span>{resetSuccess}</span>
+                  </div>
+                )}
+
+                {resetError && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 p-3 rounded mt-4">
+                    <ExclamationCircleIcon className="h-5 w-5" />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleResetSubmit} className="space-y-4 mt-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-1">
+                      Employee ID
+                    </label>
+                    <input
+                      autoComplete="off"
+                      type="text"
+                      name="employee_id"
+                      value={resetForm.employee_id}
+                      onChange={handleResetChange}
+                      required
+                      placeholder="Enter Employee ID"
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-1">
+                      New Password
+                    </label>
+                    <input
+                      autoComplete="off"
+                      type="password"
+                      name="new_password"
+                      value={resetForm.new_password}
+                      onChange={handleResetChange}
+                      required
+                      placeholder="Enter New Password"
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setResetModalOpen(false)}
+                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={resetLoading}
+                      className={`bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm ${
+                        resetLoading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {resetLoading ? "Resetting..." : "Reset Password"}
+                    </button>
+                  </div>
+                </form>
+              </Dialog.Panel>
+            </div>
+          </div>
+        </Dialog>
+      </Transition.Root>
+    </div>
+  );
+}
