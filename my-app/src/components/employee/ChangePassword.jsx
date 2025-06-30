@@ -109,6 +109,7 @@ export default function ChangePassword() {
           >
             New Password
           </label>
+          
           <input
             type={showNew ? "text" : "password"}
             id="newPassword"
