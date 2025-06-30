@@ -98,24 +98,36 @@ export default function Employee() {
   const handleUpdate = async () => {
     try {
       const payload = {
-        ...editData,
+        name: editData.name,
+        email: editData.email,
+        role: editData.role,
+        password: editData.password || "defaultpass", // TEST with a dummy
         manager_employee_id: managerId,
       };
 
-      if (!payload.password) {
-        // Remove password if left blank
-        delete payload.password;
+      const res = await fetch(
+        `${baseUrl}/users/${managerId}/${editData.employee_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Update failed:", errorData);
+        alert(
+          `Update failed: ${
+            errorData.detail
+              ?.map((d) => `${d.loc?.join(".")}: ${d.msg}`)
+              .join("; ") || JSON.stringify(errorData)
+          }`
+        );
+        return;
       }
-
-      const res = await fetch(`${baseUrl}/users/${editData.employee_id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("Update failed");
 
       setEditModalOpen(false);
       fetchEmployees(managerId);
@@ -128,7 +140,7 @@ export default function Employee() {
   const handleDelete = async () => {
     try {
       const res = await fetch(
-        `${baseUrl}/users/${selectedEmployee.employee_id}`,
+        `${baseUrl}/users/${managerId}/${selectedEmployee.employee_id}`,
         {
           method: "DELETE",
         }
