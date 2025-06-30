@@ -98,9 +98,9 @@ Here are test credentials to try the app:
 
 ✅ Employee Login
 
-- employee_id: EMP-123
+- employee_id: EMP-01
 
-- password: secret123
+- password: 123456789
 
 ✅ You can access the deployed app here:
 
