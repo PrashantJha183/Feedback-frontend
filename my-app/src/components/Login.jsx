@@ -10,7 +10,9 @@ import {
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
+
 const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
 export default function Login() {
   const [form, setForm] = useState({
     employee_id: "",
@@ -31,6 +33,8 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState("");
   const [resetError, setResetError] = useState("");
+
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   useEffect(() => {
     if (success || error) {
@@ -112,15 +116,20 @@ export default function Login() {
     setResetError("");
 
     try {
-      const res = await fetch(`${baseUrl}/users/reset-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(resetForm),
-      });
+      const res = await fetch(
+        `${baseUrl}/users/forgot-password/${resetForm.employee_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            employee_id: resetForm.employee_id,
+            new_password: resetForm.new_password,
+          }),
+        }
+      );
 
-      
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.detail || "Password reset failed.");
@@ -287,16 +296,29 @@ export default function Login() {
                     <label className="block text-gray-700 text-sm font-medium mb-1">
                       New Password
                     </label>
-                    <input
-                      autoComplete="off"
-                      type="password"
-                      name="new_password"
-                      value={resetForm.new_password}
-                      onChange={handleResetChange}
-                      required
-                      placeholder="Enter New Password"
-                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
+                    <div className="relative">
+                      <input
+                        autoComplete="off"
+                        type={showResetPassword ? "text" : "password"}
+                        name="new_password"
+                        value={resetForm.new_password}
+                        onChange={handleResetChange}
+                        required
+                        placeholder="Enter New Password"
+                        className="block w-full border border-gray-300 rounded-md py-2 pl-3 pr-10 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowResetPassword(!showResetPassword)}
+                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                      >
+                        {showResetPassword ? (
+                          <EyeSlashIcon className="h-5 w-5" />
+                        ) : (
+                          <EyeIcon className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <div className="flex justify-end gap-3">
                     <button
