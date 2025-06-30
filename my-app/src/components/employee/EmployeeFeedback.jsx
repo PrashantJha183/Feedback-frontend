@@ -7,10 +7,11 @@ import {
   ChatBubbleBottomCenterIcon,
   FaceSmileIcon,
   FaceFrownIcon,
-  // FaceNeutralIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
+
 const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
 const sentimentIcons = {
   positive: <FaceSmileIcon className="h-6 w-6 text-green-600" />,
   neutral: <FaceSmileIcon className="h-6 w-6 text-yellow-500" />,
@@ -18,7 +19,6 @@ const sentimentIcons = {
 };
 
 export default function EmployeeFeedback() {
-  // Fetch employee from localStorage instead
   const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser")) || {};
   const employeeId = loggedInUser.employee_id || "";
 
@@ -43,10 +43,13 @@ export default function EmployeeFeedback() {
       }
       const data = await res.json();
 
-      const transformed = data.map((f) => ({
-        ...f,
-        created_at: f.created_at?.split("T")[0],
-      }));
+      const transformed = data
+        .map((f) => ({
+          ...f,
+          fullDate: f.created_at,
+        }))
+        .sort((a, b) => new Date(b.fullDate) - new Date(a.fullDate)); // Sort by full datetime descending
+
       setFeedbacks(transformed);
       setFilteredFeedbacks(transformed);
     } catch (err) {
@@ -188,6 +191,12 @@ function FeedbackCard({
     setCommentOpen(false);
   };
 
+  const formattedDate = new Date(feedback.fullDate).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
   return (
     <div className="bg-white p-6 rounded-xl shadow hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col justify-between border border-gray-100">
       <div>
@@ -197,20 +206,13 @@ function FeedbackCard({
           </span>
           <div className="flex items-center text-gray-500 text-xs gap-1">
             <ClockIcon className="h-4 w-4" />
-            <span>
-              {new Date(feedback.created_at).toLocaleString("en-IN", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                timeZone: "Asia/Kolkata",
-              })}
-            </span>
+            <span>{formattedDate}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3 mb-4">
           {sentimentIcons[feedback.sentiment] || (
-            <FaceNeutralIcon className="h-6 w-6 text-gray-400" />
+            <FaceSmileIcon className="h-6 w-6 text-gray-400" />
           )}
           <span className="capitalize text-gray-600 text-xs font-semibold">
             {feedback.sentiment || "N/A"}
