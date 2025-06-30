@@ -120,6 +120,7 @@ export default function Login() {
         body: JSON.stringify(resetForm),
       });
 
+      
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.detail || "Password reset failed.");
