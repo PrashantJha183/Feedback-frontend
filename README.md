@@ -55,6 +55,14 @@
 
 ---
 
+## ⚙️ Setup Instructions
+
+### ✅ Prerequisites
+
+- Node.js
+
+---
+
 ## 🔧 Running the Frontend Locally
 
 1. Clone the repository:
@@ -76,19 +84,23 @@
    npm run dev
    ```
 
-## 🔧 Testing
+---
+
+## 🧪 Testing
 
 Here are test credentials to try the app:
 
 ✅ Manager Login
-employee_id: MGR-001
 
-password: secret123
+- employee_id: MGR-001
+
+- password: secret123
 
 ✅ Employee Login
-employee_id: EMP-123
 
-password: secret123
+- employee_id: EMP-123
+
+- password: secret123
 
 ✅ You can access the deployed app here:
 
