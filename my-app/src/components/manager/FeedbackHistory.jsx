@@ -122,7 +122,7 @@ export default function FeedbackHistory() {
         tags: editData.tags,
       };
 
-      const res = await fetch(`${BASE_URL}/feedback/${selectedFeedback.id}`, {
+      const res = await fetch(`${baseUrl}/feedback/${selectedFeedback.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +140,7 @@ export default function FeedbackHistory() {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/feedback/${selectedFeedback.id}`, {
+      const res = await fetch(`${baseUrl}/feedback/${selectedFeedback.id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Delete failed");
@@ -155,7 +155,7 @@ export default function FeedbackHistory() {
   const handleDeleteAll = async () => {
     if (window.confirm("Are you sure you want to delete all your feedbacks?")) {
       try {
-        const res = await fetch(`${BASE_URL}/feedback/manager/${managerId}`, {
+        const res = await fetch(`${baseUrl}/feedback/manager/${managerId}`, {
           method: "DELETE",
         });
         if (!res.ok) throw new Error("Delete all failed");
