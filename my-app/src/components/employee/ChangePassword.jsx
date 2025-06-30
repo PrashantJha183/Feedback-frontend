@@ -6,7 +6,7 @@ import {
   EyeSlashIcon,
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 export default function ChangePassword() {
   // Use localStorage instead of sessionStorage
   const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser")) || {};
@@ -28,7 +28,7 @@ export default function ChangePassword() {
 
     try {
       const res = await fetch(
-        `https://feedback-2uwd.onrender.com/users/change-password/${employeeId}`,
+        `${baseUrl}/users/change-password/${employeeId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -109,7 +109,7 @@ export default function ChangePassword() {
           >
             New Password
           </label>
-          
+
           <input
             type={showNew ? "text" : "password"}
             id="newPassword"

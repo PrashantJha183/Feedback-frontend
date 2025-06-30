@@ -13,7 +13,7 @@ import {
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
 
-const BASE_URL = "https://feedback-2uwd.onrender.com";
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export default function Employee() {
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ export default function Employee() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${BASE_URL}/users/manager/${managerId}/employees`
+        `${baseUrl}/users/manager/${managerId}/employees`
       );
       if (!res.ok) throw new Error("Failed to fetch employees");
       const data = await res.json();
@@ -107,7 +107,7 @@ export default function Employee() {
         delete payload.password;
       }
 
-      const res = await fetch(`${BASE_URL}/users/${editData.employee_id}`, {
+      const res = await fetch(`${baseUrl}/users/${editData.employee_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +128,7 @@ export default function Employee() {
   const handleDelete = async () => {
     try {
       const res = await fetch(
-        `${BASE_URL}/users/${selectedEmployee.employee_id}`,
+        `${baseUrl}/users/${selectedEmployee.employee_id}`,
         {
           method: "DELETE",
         }

@@ -10,7 +10,7 @@ import {
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 export default function Login() {
   const [form, setForm] = useState({
     employee_id: "",
@@ -57,7 +57,7 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:8000/users/login", {
+      const res = await fetch(`${baseUrl}/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +78,7 @@ export default function Login() {
 
       if (data.role === "manager") {
         const empRes = await fetch(
-          `http://localhost:8000/users/manager/${data.employee_id}/employees`
+          `${baseUrl}/users/manager/${data.employee_id}/employees`
         );
 
         if (empRes.ok) {
@@ -112,7 +112,7 @@ export default function Login() {
     setResetError("");
 
     try {
-      const res = await fetch("http://localhost:8000/users/reset-password", {
+      const res = await fetch(`${baseUrl}/users/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

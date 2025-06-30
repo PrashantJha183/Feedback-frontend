@@ -10,7 +10,7 @@ import {
   // FaceNeutralIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 const sentimentIcons = {
   positive: <FaceSmileIcon className="h-6 w-6 text-green-600" />,
   neutral: <FaceSmileIcon className="h-6 w-6 text-yellow-500" />,
@@ -36,9 +36,7 @@ export default function EmployeeFeedback() {
     setError(null);
 
     try {
-      const res = await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/employee/${employeeId}`
-      );
+      const res = await fetch(`${baseUrl}/feedback/employee/${employeeId}`);
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.detail || "Failed to fetch feedbacks.");
@@ -84,10 +82,9 @@ export default function EmployeeFeedback() {
     setAckLoading((prev) => ({ ...prev, [id]: true }));
 
     try {
-      const res = await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/acknowledge/${id}`,
-        { method: "PATCH" }
-      );
+      const res = await fetch(`${baseUrl}/feedback/acknowledge/${id}`, {
+        method: "PATCH",
+      });
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.detail || "Acknowledge failed.");
@@ -110,14 +107,11 @@ export default function EmployeeFeedback() {
     setCommentLoading((prev) => ({ ...prev, [id]: true }));
 
     try {
-      const res = await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/comment/${id}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ comment }),
-        }
-      );
+      const res = await fetch(`${baseUrl}/feedback/comment/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment }),
+      });
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.detail || "Comment failed.");

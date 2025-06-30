@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 export default function NotificationPanel() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,7 @@ export default function NotificationPanel() {
 
     try {
       const res = await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/notifications/${employeeId}`
+        `${baseUrl}/feedback/notifications/${employeeId}`
       );
 
       if (!res.ok) {

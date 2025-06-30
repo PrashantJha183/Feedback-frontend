@@ -16,7 +16,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition, Menu } from "@headlessui/react";
 import { useNavigate, Link } from "react-router-dom";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 const navigation = [
   { name: "Dashboard", icon: HomeIcon, to: "/dashboardforemployee" },
   {
@@ -49,7 +49,7 @@ export default function Header({ employeeName, children }) {
     setLoadingNotifs(true);
     try {
       const res = await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/notifications/${employeeId}`
+        `${baseUrl}/feedback/notifications/${employeeId}`
       );
       if (!res.ok) throw new Error("Failed to fetch notifications");
       const data = await res.json();
@@ -69,12 +69,9 @@ export default function Header({ employeeName, children }) {
   const toggleSeen = async (notifId, seen) => {
     setNotifActionLoading(true);
     try {
-      await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/notifications/${notifId}?seen=${seen}`,
-        {
-          method: "PATCH",
-        }
-      );
+      await fetch(`${baseUrl}/feedback/notifications/${notifId}?seen=${seen}`, {
+        method: "PATCH",
+      });
       await fetchNotifications();
     } catch (err) {
       console.error(err);
@@ -87,7 +84,7 @@ export default function Header({ employeeName, children }) {
     setNotifActionLoading(true);
     try {
       await fetch(
-        `https://feedback-2uwd.onrender.com/feedback/notifications/mark-all-seen/${employeeId}`,
+        `${baseUrl}/feedback/notifications/mark-all-seen/${employeeId}`,
         {
           method: "PATCH",
         }

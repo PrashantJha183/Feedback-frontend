@@ -9,7 +9,7 @@ import {
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate, Link } from "react-router-dom";
 
-const BASE_URL = "https://feedback-2uwd.onrender.com";
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export default function FeedbackHistory() {
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ export default function FeedbackHistory() {
   const fetchFeedbackRequests = async (managerId) => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/feedback/requests/${managerId}`);
+      const res = await fetch(`${baseUrl}/feedback/requests/${managerId}`);
       if (!res.ok) throw new Error("Failed to fetch feedback requests.");
       const data = await res.json();
       setFeedbackRequests(data);
@@ -65,7 +65,7 @@ export default function FeedbackHistory() {
   const markRequestSeen = async (requestId) => {
     try {
       const res = await fetch(
-        `${BASE_URL}/feedback/requests/${requestId}/seen`,
+        `${baseUrl}/feedback/requests/${requestId}/seen`,
         { method: "PATCH" }
       );
       if (!res.ok) throw new Error("Failed to mark request as seen.");

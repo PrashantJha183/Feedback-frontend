@@ -8,7 +8,7 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 export default function FeedbackRequestForm() {
   const [managerId, setManagerId] = useState("");
   const [message, setMessage] = useState("");
@@ -28,20 +28,17 @@ export default function FeedbackRequestForm() {
     setError(null);
 
     try {
-      const response = await fetch(
-        "https://feedback-2uwd.onrender.com/feedback/request",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            employee_id: employeeId,
-            manager_employee_id: managerId,
-            message,
-          }),
-        }
-      );
+      const response = await fetch(`${baseUrl}/feedback/request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employee_id: employeeId,
+          manager_employee_id: managerId,
+          message,
+        }),
+      });
 
       if (!response.ok) {
         const errData = await response.json().catch(() => null);

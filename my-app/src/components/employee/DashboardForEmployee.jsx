@@ -12,7 +12,7 @@ import {
   UsersIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 const sentimentIcon = {
   positive: <FaceSmileIcon className="h-6 w-6 text-green-600" />,
   neutral: <FaceSmileIcon className="h-6 w-6 text-yellow-500" />,
@@ -46,7 +46,7 @@ const DashboardForEmployee = () => {
     const fetchTimeline = async () => {
       try {
         const res = await fetch(
-          `https://feedback-2uwd.onrender.com/users/dashboard/employee/${employeeId}`
+          `${baseUrl}/users/dashboard/employee/${employeeId}`
         );
 
         if (!res.ok) {

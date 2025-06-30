@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { UsersIcon, BellIcon, ChartPieIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 const Dashboard = () => {
   const [managerName, setManagerName] = useState("");
   const [managerId, setManagerId] = useState("");
@@ -48,15 +48,9 @@ const Dashboard = () => {
         setDashboardLoading(true);
 
         const [unseenRes, employeeRes, dashboardRes] = await Promise.all([
-          fetch(
-            `https://feedback-2uwd.onrender.com/feedback/requests/${managerId}/count-unseen`
-          ),
-          fetch(
-            `https://feedback-2uwd.onrender.com/users/manager/${managerId}/employees`
-          ),
-          fetch(
-            `https://feedback-2uwd.onrender.com/users/dashboard/manager/${managerId}`
-          ),
+          fetch(`${baseUrl}/feedback/requests/${managerId}/count-unseen`),
+          fetch(`${baseUrl}/users/manager/${managerId}/employees`),
+          fetch(`${baseUrl}/users/dashboard/manager/${managerId}`),
         ]);
 
         if (!unseenRes.ok) {

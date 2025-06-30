@@ -9,7 +9,7 @@ import {
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
 
-const BASE_URL = "https://feedback-2uwd.onrender.com";
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export default function FeedbackHistory() {
   const navigate = useNavigate();
@@ -56,7 +56,7 @@ export default function FeedbackHistory() {
   const fetchFeedbacks = async (managerId) => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/feedback/manager/${managerId}`);
+      const res = await fetch(`${baseUrl}/feedback/manager/${managerId}`);
       if (!res.ok) throw new Error("Failed to fetch feedbacks");
       const data = await res.json();
       setFeedbacks(data);

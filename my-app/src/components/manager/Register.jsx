@@ -12,7 +12,7 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
-
+const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 export default function Register() {
   const [form, setForm] = useState({
     name: "",
@@ -79,7 +79,7 @@ export default function Register() {
           form.role === "employee" ? form.manager_employee_id : null,
       };
 
-      const res = await fetch("http://localhost:8000/users/", {
+      const res = await fetch(`${baseUrl}/users/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
