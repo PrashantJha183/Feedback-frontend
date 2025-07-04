@@ -69,7 +69,7 @@
 
    ```bash
    git clone https://github.com/PrashantJha183/Feedback-frontend.git
-   cd my-app
+   cd Feedback-frontend
    ```
 
 2. Install dependencies:
